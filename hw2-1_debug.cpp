@@ -1,3 +1,51 @@
+#pragma GCC optimize(3)
+#pragma GCC target("avx")
+#pragma GCC optimize("Ofast")
+#pragma GCC optimize("inline")
+#pragma GCC optimize("-fgcse")
+#pragma GCC optimize("-fgcse-lm")
+#pragma GCC optimize("-fipa-sra")
+#pragma GCC optimize("-ftree-pre")
+#pragma GCC optimize("-ftree-vrp")
+#pragma GCC optimize("-fpeephole2")
+#pragma GCC optimize("-ffast-math")
+#pragma GCC optimize("-fsched-spec")
+#pragma GCC optimize("unroll-loops")
+#pragma GCC optimize("-falign-jumps")
+#pragma GCC optimize("-falign-loops")
+#pragma GCC optimize("-falign-labels")
+#pragma GCC optimize("-fdevirtualize")
+#pragma GCC optimize("-fcaller-saves")
+#pragma GCC optimize("-fcrossjumping")
+#pragma GCC optimize("-fthread-jumps")
+#pragma GCC optimize("-funroll-loops")
+#pragma GCC optimize("-fwhole-program")
+#pragma GCC optimize("-freorder-blocks")
+#pragma GCC optimize("-fschedule-insns")
+#pragma GCC optimize("inline-functions")
+#pragma GCC optimize("-ftree-tail-merge")
+#pragma GCC optimize("-fschedule-insns2")
+#pragma GCC optimize("-fstrict-aliasing")
+#pragma GCC optimize("-fstrict-overflow")
+#pragma GCC optimize("-falign-functions")
+#pragma GCC optimize("-fcse-skip-blocks")
+#pragma GCC optimize("-fcse-follow-jumps")
+#pragma GCC optimize("-fsched-interblock")
+#pragma GCC optimize("-fpartial-inlining")
+#pragma GCC optimize("no-stack-protector")
+#pragma GCC optimize("-freorder-functions")
+#pragma GCC optimize("-findirect-inlining")
+#pragma GCC optimize("-fhoist-adjacent-loads")
+#pragma GCC optimize("-frerun-cse-after-loop")
+#pragma GCC optimize("inline-small-functions")
+#pragma GCC optimize("-finline-small-functions")
+#pragma GCC optimize("-ftree-switch-conversion")
+#pragma GCC optimize("-foptimize-sibling-calls")
+#pragma GCC optimize("-fexpensive-optimizations")
+#pragma GCC optimize("-funsafe-loop-optimizations")
+#pragma GCC optimize("inline-functions-called-once")
+#pragma GCC optimize("-fdelete-null-pointer-checks")
+#pragma GCC optimize(2)
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -17,7 +65,6 @@ int wrapIndex(int idx, int limit) {
 
 double solve(int n, int m, int i, int j, int offset, std::vector<std::vector<int> > &A, std::vector<std::vector<int> > &K) {
     double sum = 0.0;
-    // 將平行化區域放到外層，並使用 reduction 和 collapse
     #pragma omp parallel for reduction(+:sum) collapse(2)
     for (int di = -offset; di <= offset; ++di) {
         for (int dj = -offset; dj <= offset; ++dj) {
@@ -30,8 +77,8 @@ double solve(int n, int m, int i, int j, int offset, std::vector<std::vector<int
 }
 
 int main(int argc, char *argv[]) {
- //   std::ios_base::sync_with_stdio(false);
- //   std::cin.tie(0);
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(0);
     MPI_Init(&argc, &argv);
     
     int world_size, world_rank;
@@ -113,7 +160,6 @@ int main(int argc, char *argv[]) {
     std::vector<std::vector<int> > A_next(m, std::vector<int>(n));
 
     if (world_rank == 0) {
-        // 用 OpenMP 平行化時間步的外層迴圈
         #pragma omp parallel for
         for (int step = 0; step < t; ++step) {
             for (int i = 0; i < m; ++i) {
@@ -139,7 +185,6 @@ int main(int argc, char *argv[]) {
                             MPI_Isend(&r, 1, MPI_INT, k, 0, MPI_COMM_WORLD, &request[3]);
                         }
 
-                        // 收集來自其他 process 的資料
                         for (int k = 1; k < 8; ++k) {
                             double total = 0.0;
                             MPI_Recv(&total, 1, MPI_DOUBLE, k, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -151,7 +196,6 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            // 更新 A 矩陣
             A = A_next;
         }
     } else if (offset * 2 >= 8) {
@@ -162,7 +206,6 @@ int main(int argc, char *argv[]) {
         MPI_Recv(&r, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         double sum = 0.0;
 
-        // 對接收到的區域進行平行計算
         #pragma omp parallel for reduction(+:sum)
         for (int di = l; di <= r; ++di) {
             for (int dj = l; dj <= r; ++dj) {
@@ -175,17 +218,18 @@ int main(int argc, char *argv[]) {
         MPI_Send(&sum, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
     }
 
-    // 最後輸出結果
     
     if (world_rank == 0) {
+        std::string ans;
        // std::cout << std::unitbuf;
         for (int i = 0; i < m; ++i) {
             for (int j = 0; j < n; ++j) {
-                std::cout << A[i][j] << " ";
+                ans += std::to_string(A[i][j]);
+                ans += " ";
             }
-            std::cout << "\n";
-           // std::cout.flush();
         }
+
+        std::cout << ans;
     }
 
     MPI_Finalize();
