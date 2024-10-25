@@ -39,7 +39,6 @@ int main(int argc, char *argv[]) {
         input_file >> v >> w;
         if (cnt >= world_rank * block && cnt < (world_rank + 1) * block) {
             e[u].push_back({v, w});
-            e[v].push_back({u, w});
         }
         cnt++;
     }
@@ -64,7 +63,7 @@ int main(int argc, char *argv[]) {
         int rr = (world_rank + 1) * (n / world_size) - 1;
         if (world_rank == world_size - 1) rr = n - 1;
 
-        for (int j = ll; j <= rr; j++) {
+        for (int j = 0; j < n; j++) {
             if (!ok[j] && dis[j] < local_min.value) {
                 local_min.value = dis[j];
                 local_min.index = j;
