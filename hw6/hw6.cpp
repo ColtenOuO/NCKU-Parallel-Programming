@@ -56,6 +56,7 @@ std::vector<int> create_route(std::mt19937& rng) {
     std::vector<bool> visited(NUM_CITIES, false);
     std::uniform_int_distribution<int> start_dist(0, NUM_CITIES - 1); // random [0, NUM_CITIES-1]
     int current_city = start_dist(rng);
+    current_city = 0;
     route.push_back(current_city);
     visited[current_city] = true;
     for(int step = 0; step < NUM_CITIES; step++) {
